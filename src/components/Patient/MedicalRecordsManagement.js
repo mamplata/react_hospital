@@ -30,7 +30,7 @@ const MedicalRecordsManagement = ({ patients }) => {
         // Filter medical records based on the patient's ID
         const patientMedicalRecords = medicalRecords.filter(record => record.patient_id === patients.id);
         setMedicalRecords(patientMedicalRecords);
-    }, [patientId]);
+    }, [patients.id]);
 
     return (
         <div>

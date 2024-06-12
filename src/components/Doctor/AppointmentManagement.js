@@ -42,7 +42,7 @@ const AppointmentManagement = ({ doctors }) => {
         setNewAppointment({
             id: '',
             patient_id: '',
-            doctor_id: doctorId,
+            doctor_id: doctors.id,
             appointment_date: '',
             status: '',
             reason: '',

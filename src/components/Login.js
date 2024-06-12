@@ -1,28 +1,80 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Login = ({ users, loginUser }) => {
+// Import Bootstrap CSS
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+const Login = ({ loginUser }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    const user = users.find(u => u.email === email && u.password === password);
-    if (user) {
-      loginUser(user);
-      navigate(`/${user.role}dashboard`);
-    } else {
-      alert('Invalid email or password');
-    }
+    // Send POST request to login endpoint
+    fetch('/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error('Invalid email or password');
+        }
+      })
+      .then(data => {
+        // If login successful, set user details in local storage and redirect to dashboard
+        localStorage.setItem('user', JSON.stringify(data.user));
+        loginUser(data.user);
+        navigate(`/${data.user.role}dashboard`);
+      })
+      .catch(error => {
+        alert(error.message);
+      });
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-      <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button onClick={handleLogin}>Login</button>
-      <p>Don't have an account? <a href="/register">Register</a></p>
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <h2 className="card-title">Login</h2>
+              <form>
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    id="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="password">Password</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                  />
+                </div>
+                <button type="button" className="btn btn-primary" onClick={handleLogin}>
+                  Login
+                </button>
+              </form>
+              <p className="mt-3">Don't have an account? <a href="/register">Register</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

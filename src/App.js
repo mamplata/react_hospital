@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './components/Login';
 import Registration from './components/Registration';
@@ -11,15 +11,23 @@ import DoctorManagement from './components/Admin/DoctorManagement';
 import PatientManagement from './components/Admin/PatientManagement';
 import AppointmentManagement from './components/Admin/AppointmentManagement';
 import MedicalRecordsManagement from './components/Admin/MedicalRecordsManagement';
+import DoctorManagementDoctor from './components/Doctor/DoctorManagement';
+import PatientManagementDoctor from './components/Doctor/PatientManagement';
+import AppointmentManagementDoctor from './components/Doctor/AppointmentManagement';
+import MedicalRecordsManagementDoctor from './components/Doctor/MedicalRecordsManagement';
+import AppointmentManagementPatient from './components/Patient/AppointmentManagement';
+import MedicalRecordsManagementPatient from './components/Patient/MedicalRecordsManagement';
+import PatientManagementReceptionist from './components/Receptionist/PatientManagement';
+import AppointmentManagementReceptionist from './components/Receptionist/AppointmentManagement';
+
 
 const App = () => {
-  const [users, setUsers] = useState([
-    { id: 1, name: 'Admin User', email: 'admin@example.com', password: 'admin123', role: 'admin' },
-    { id: 2, name: 'Patient User', email: 'patient@example.com', password: 'patient123', role: 'patient' },
-    { id: 3, name: 'Doctor User', email: 'doctor@example.com', password: 'doctor123', role: 'doctor' },
-    { id: 4, name: 'Receptionist User', email: 'receptionist@example.com', password: 'receptionist123', role: 'receptionist' }
-  ]);
+  const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [medicalRecords, setMedicalRecords] = useState([]);
 
   const addUser = (user) => {
     const newUser = { ...user, id: users.length ? users[users.length - 1].id + 1 : 1 };
@@ -30,71 +38,37 @@ const App = () => {
     setCurrentUser(user);
   };
 
-   // Dummy data for patients, doctors, appointments, and medical records
-   const [patients, setPatients] = useState([
-    {
-      id: 1,
-      first_name: 'John',
-      last_name: 'Doe',
-      date_of_birth: new Date('1980-01-01').toISOString(),
-      gender: 'Male',
-      address: '123 Main Street, Anytown, CA 12345',
-      phone: '555-555-5555',
-      email: 'john.doe@example.com',
-      emergency_contact: {
-        name: 'Jane Doe',
-        phone: '555-555-1234',
-      },
-      medical_history: 'None',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    // Add more dummy patient data here
-  ]);
+  useEffect(() => {
+    // Fetch users data
+    fetch('/users')
+      .then(response => response.json())
+      .then(data => setUsers(data))
+      .catch(error => console.error('Error fetching users:', error));
 
-  const [doctors, setDoctors] = useState([
-    {
-      id: 1,
-      first_name: 'Jane',
-      last_name: 'Smith',
-      specialization: 'Cardiology',
-      license_number: '123456',
-      phone: '555-555-6666',
-      email: 'jane.smith@example.com',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    // Add more dummy doctor data here
-  ]);
+    // Fetch patients data
+    fetch('/patients')
+      .then(response => response.json())
+      .then(data => setPatients(data))
+      .catch(error => console.error('Error fetching patients:', error));
 
-  const [appointments, setAppointments] = useState([
-    {
-      id: 1,
-      patient_id: 1,
-      doctor_id: 1,
-      appointment_date: new Date('2024-06-13').toISOString(), // Adjust date as needed
-      status: 'Scheduled',
-      reason: 'Annual checkup',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    // Add more dummy appointment data here
-  ]);
+    // Fetch doctors data
+    fetch('/doctors')
+      .then(response => response.json())
+      .then(data => setDoctors(data))
+      .catch(error => console.error('Error fetching doctors:', error));
 
-  const [medicalRecords, setMedicalRecords] = useState([
-    {
-      id: 1,
-      patient_id: 1,
-      doctor_id: 1,
-      visit_date: new Date('2024-06-13').toISOString(), // Adjust date as needed
-      diagnosis: 'Normal',
-      treatment: 'N/A',
-      notes: '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    // Add more dummy medical record data here
-  ]);
+    // Fetch appointments data
+    fetch('/appointments')
+      .then(response => response.json())
+      .then(data => setAppointments(data))
+      .catch(error => console.error('Error fetching appointments:', error));
+
+    // Fetch medical records data
+    fetch('/medical_records')
+      .then(response => response.json())
+      .then(data => setMedicalRecords(data))
+      .catch(error => console.error('Error fetching medical records:', error));
+  }, []);
 
   return (
     <Router>
@@ -110,18 +84,18 @@ const App = () => {
         </Route>
         <Route path="/patientdashboard" element={<PatientDashboard currentUser={currentUser} />} />
         <Route path="/patientdashboard/*" element={<PatientDashboard currentUser={currentUser}/>}>
-          <Route path="appointments" element={<AppointmentManagement patients={patients}/>} />
-          <Route path="records" element={<MedicalRecordsManagement patients={patients}/>} />
+          <Route path="appointments" element={<AppointmentManagementPatient patients={patients}/>} />
+          <Route path="records" element={<MedicalRecordsManagementPatient patients={patients}/>} />
         </Route>
         <Route path="/doctordashboard/*" element={<DoctorDashboard currentUser={currentUser}/>}>
-          <Route path="doctors" element={<DoctorManagement doctors={doctors} setDoctors={setDoctors}/>} />
-          <Route path="patients" element={<PatientManagement />} />
-          <Route path="appointments" element={<AppointmentManagement doctors={doctors}/>} />
-          <Route path="records" element={<MedicalRecordsManagement />} />
+          <Route path="doctors" element={<DoctorManagementDoctor doctors={doctors} setDoctors={setDoctors}/>} />
+          <Route path="patients" element={<PatientManagementDoctor />} />
+          <Route path="appointments" element={<AppointmentManagementDoctor doctors={doctors}/>} />
+          <Route path="records" element={<MedicalRecordsManagementDoctor />} />
         </Route>
         <Route path="/receptionistdashboard/*" element={<ReceptionistDashboard currentUser={currentUser}/>}>
-          <Route path="patients" element={<PatientManagement />} />
-          <Route path="appointments" element={<AppointmentManagement doctors={doctors}/>} />
+          <Route path="patients" element={<PatientManagementReceptionist />} />
+          <Route path="appointments" element={<AppointmentManagementReceptionist doctors={doctors}/>} />
         </Route>
       </Routes>
     </Router>
