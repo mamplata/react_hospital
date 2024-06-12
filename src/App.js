@@ -109,13 +109,20 @@ const App = () => {
           <Route path="records" element={<MedicalRecordsManagement />} />
         </Route>
         <Route path="/patientdashboard" element={<PatientDashboard currentUser={currentUser} />} />
+        <Route path="/patientdashboard/*" element={<PatientDashboard currentUser={currentUser}/>}>
+          <Route path="appointments" element={<AppointmentManagement patients={patients}/>} />
+          <Route path="records" element={<MedicalRecordsManagement patients={patients}/>} />
+        </Route>
         <Route path="/doctordashboard/*" element={<DoctorDashboard currentUser={currentUser}/>}>
           <Route path="doctors" element={<DoctorManagement doctors={doctors} setDoctors={setDoctors}/>} />
           <Route path="patients" element={<PatientManagement />} />
           <Route path="appointments" element={<AppointmentManagement doctors={doctors}/>} />
           <Route path="records" element={<MedicalRecordsManagement />} />
         </Route>
-        <Route path="/receptionistdashboard" element={<ReceptionistDashboard currentUser={currentUser} />} />
+        <Route path="/receptionistdashboard/*" element={<ReceptionistDashboard currentUser={currentUser}/>}>
+          <Route path="patients" element={<PatientManagement />} />
+          <Route path="appointments" element={<AppointmentManagement doctors={doctors}/>} />
+        </Route>
       </Routes>
     </Router>
   );
