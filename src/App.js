@@ -30,6 +30,72 @@ const App = () => {
     setCurrentUser(user);
   };
 
+   // Dummy data for patients, doctors, appointments, and medical records
+   const [patients, setPatients] = useState([
+    {
+      id: 1,
+      first_name: 'John',
+      last_name: 'Doe',
+      date_of_birth: new Date('1980-01-01').toISOString(),
+      gender: 'Male',
+      address: '123 Main Street, Anytown, CA 12345',
+      phone: '555-555-5555',
+      email: 'john.doe@example.com',
+      emergency_contact: {
+        name: 'Jane Doe',
+        phone: '555-555-1234',
+      },
+      medical_history: 'None',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    // Add more dummy patient data here
+  ]);
+
+  const [doctors, setDoctors] = useState([
+    {
+      id: 1,
+      first_name: 'Jane',
+      last_name: 'Smith',
+      specialization: 'Cardiology',
+      license_number: '123456',
+      phone: '555-555-6666',
+      email: 'jane.smith@example.com',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    // Add more dummy doctor data here
+  ]);
+
+  const [appointments, setAppointments] = useState([
+    {
+      id: 1,
+      patient_id: 1,
+      doctor_id: 1,
+      appointment_date: new Date('2024-06-13').toISOString(), // Adjust date as needed
+      status: 'Scheduled',
+      reason: 'Annual checkup',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    // Add more dummy appointment data here
+  ]);
+
+  const [medicalRecords, setMedicalRecords] = useState([
+    {
+      id: 1,
+      patient_id: 1,
+      doctor_id: 1,
+      visit_date: new Date('2024-06-13').toISOString(), // Adjust date as needed
+      diagnosis: 'Normal',
+      treatment: 'N/A',
+      notes: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    // Add more dummy medical record data here
+  ]);
+
   return (
     <Router>
       <Routes>
@@ -43,7 +109,12 @@ const App = () => {
           <Route path="records" element={<MedicalRecordsManagement />} />
         </Route>
         <Route path="/patientdashboard" element={<PatientDashboard currentUser={currentUser} />} />
-        <Route path="/doctordashboard" element={<DoctorDashboard currentUser={currentUser} />} />
+        <Route path="/doctordashboard/*" element={<DoctorDashboard currentUser={currentUser}/>}>
+          <Route path="doctors" element={<DoctorManagement doctors={doctors} setDoctors={setDoctors}/>} />
+          <Route path="patients" element={<PatientManagement />} />
+          <Route path="appointments" element={<AppointmentManagement doctors={doctors}/>} />
+          <Route path="records" element={<MedicalRecordsManagement />} />
+        </Route>
         <Route path="/receptionistdashboard" element={<ReceptionistDashboard currentUser={currentUser} />} />
       </Routes>
     </Router>

@@ -1,18 +1,18 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 
-const DoctorDashboard = ({ currentUser }) => {
-
+const DoctorDashboard = ({ currentUser}) => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        // Perform logout action here (e.g., clear session, reset authentication state)
         navigate('/');
     };
 
-    if (!currentUser) {
-        navigate('/');
-    }
+    React.useEffect(() => {
+        if (!currentUser || currentUser.role !== 'doctor') {
+            navigate('/');
+        }
+    }, [currentUser, navigate]);
 
     return (
         <div>
@@ -20,6 +20,17 @@ const DoctorDashboard = ({ currentUser }) => {
             <h2>Welcome, {currentUser.name}</h2>
             <p>Role: {currentUser.role}</p>
             <button onClick={handleLogout}>Logout</button>
+
+            <nav>
+                <ul>
+                    <li><Link to="doctors">Doctor Management</Link></li>
+                    <li><Link to="patients">Patient Management</Link></li>
+                    <li><Link to="appointments">Appointment Management</Link></li>
+                    <li><Link to="records">Medical Records Management</Link></li>
+                </ul>
+            </nav>
+
+            <Outlet context={{ currentUser}} />
         </div>
     );
 };
