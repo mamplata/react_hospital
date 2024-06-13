@@ -21,47 +21,97 @@ const Registration = () => {
   const navigate = useNavigate();
 
   const handleRegistration = () => {
+    const name = `${firstName} ${lastName}`;
     const userData = {
-      role,
+      name,
       email,
       password,
+      role,
     };
 
-    const userDataWithRole = role === 'patient' ? { ...userData, ...patientData } : { ...userData, ...doctorData };
-
-    // Send POST request to register endpoint
-    fetch('/register', {
+    // First send request to /login endpoint
+    fetch('http://127.0.0.1:8000/api/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(userDataWithRole),
+      body: JSON.stringify(userData),
     })
       .then(response => response.json())
-      .then(() => {
-        alert('Account created successfully! Please log in.');
-        navigate('/');
+      .then(data => {
+        if (data.errors) {
+          alert('Error during login: ' + JSON.stringify(data.errors));
+        } else {
+          // Now send request to either /patient or /doctor endpoint
+          if (role === 'patient') {
+            registerPatient();
+          } else if (role === 'doctor') {
+            registerDoctor();
+          }
+        }
       })
-      .catch(error => console.error('Error registering user:', error));
+      .catch(error => console.error('Error during login:', error));
   };
 
-  const patientData = {
-    first_name: firstName,
-    last_name: lastName,
-    date_of_birth: dateOfBirth,
-    gender,
-    address,
-    phone,
-    email,
+  const registerPatient = () => {
+    const patientData = {
+      first_name: firstName,
+      last_name: lastName,
+      date_of_birth: dateOfBirth,
+      gender,
+      address,
+      phone,
+      email,
+      emergency_contact: emergencyContact,
+      medical_history: medicalHistory,
+    };
+
+    fetch('http://127.0.0.1:8000/api/addPatients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(patientData),
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.errors) {
+          alert('Error registering patient: ' + JSON.stringify(data.errors));
+        } else {
+          alert('Patient account created successfully! Please log in.');
+          navigate('/');
+        }
+      })
+      .catch(error => console.error('Error registering patient:', error));
   };
 
-  const doctorData = {
-    first_name: firstName,
-    last_name: lastName,
-    specialization,
-    license_number: licenseNumber,
-    phone,
-    email,
+  const registerDoctor = () => {
+    const doctorData = {
+      first_name: firstName,
+      last_name: lastName,
+      specialization,
+      license_number: licenseNumber,
+      phone,
+      email,
+    };
+
+    fetch('http://127.0.0.1:8000/api/addDoctors', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(doctorData),
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.errors) {
+          alert('Error registering doctor: ' + JSON.stringify(data.errors));
+        } else {
+          alert('Doctor account created successfully! Please log in.');
+          navigate('/');
+        }
+      })
+      .catch(error => console.error('Error registering doctor:', error));
   };
 
   return (
@@ -90,15 +140,6 @@ const Registration = () => {
                 <label htmlFor="lastName">Last Name</label>
                 <input type="text" className="form-control" id="lastName" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} />
               </div>
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input type="email" className="form-control" id="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input type="password" className="form-control" id="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-              </div>
-
               {/* Additional fields for patients */}
               {role === 'patient' && (
                 <>
@@ -133,6 +174,10 @@ const Registration = () => {
               {role === 'doctor' && (
                 <>
                   <div className="form-group">
+                    <label htmlFor="phone">Phone</label>
+                    <input type="tel" className="form-control" id="phone" placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} />
+                  </div>
+                  <div className="form-group">
                     <label htmlFor="specialization">Specialization</label>
                     <input type="text" className="form-control" id="specialization" placeholder="Specialization" value={specialization} onChange={e => setSpecialization(e.target.value)} />
                   </div>
@@ -143,8 +188,17 @@ const Registration = () => {
                 </>
               )}
 
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input type="email" className="form-control" id="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <input type="password" className="form-control" id="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+              </div>
               {/* Register button */}
               <button type="button" className="btn btn-primary" onClick={handleRegistration}>Register</button>
+              <p className="mt-3">Already have an account? <a href="/">Login</a></p>
             </div>
           </div>
         </div>

@@ -1,62 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const AppointmentManagement = () => {
-    const [appointments, setAppointments] = useState([
-        {
-            id: 1,
-            patient_id: 1,
-            doctor_id: 1,
-            appointment_date: '2024-06-15T10:00:00Z',
-            status: 'scheduled',
-            reason: 'Regular checkup',
-            created_at: '2024-06-10T12:00:00Z',
-            updated_at: '2024-06-10T12:00:00Z'
-        },
-        {
-            id: 2,
-            patient_id: 2,
-            doctor_id: 2,
-            appointment_date: '2024-06-20T14:00:00Z',
-            status: 'scheduled',
-            reason: 'Follow-up consultation',
-            created_at: '2024-06-10T12:00:00Z',
-            updated_at: '2024-06-10T12:00:00Z'
+    const [appointments, setAppointments] = useState([]);
+
+    useEffect(() => {
+        fetchAppointments();
+    }, []);
+
+    const fetchAppointments = async () => {
+        try {
+            const response = await axios.get('http://127.0.0.1:8000/api/appointments');
+            const appointmentsWithDetails = await Promise.all(
+                response.data.map(async appointment => {
+                    // Fetch patient and doctor details
+                    const [patient, doctor] = await Promise.all([
+                        fetchPersonDetails('patients', appointment.patient_id),
+                        fetchPersonDetails('doctors', appointment.doctor_id)
+                    ]);
+
+                    return {
+                        ...appointment,
+                        patient: patient,
+                        doctor: doctor
+                    };
+                })
+            );
+            setAppointments(appointmentsWithDetails);
+        } catch (error) {
+            console.error('Failed to fetch appointments:', error);
         }
-    ]);
+    };
+
+    const fetchPersonDetails = async (type, id) => {
+        try {
+            const response = await axios.get(`http://127.0.0.1:8000/api/${type}/${id}`);
+            return `${response.data.first_name} ${response.data.last_name}`;
+        } catch (error) {
+            console.error(`Failed to fetch ${type} details with id ${id}:`, error);
+            return '';
+        }
+    };
 
     return (
+        <div className="container">
+        <h3>Appointment Management</h3>
         <div>
-            <h3>Appointment Management</h3>
-            <div>
-                <h4>All Appointments</h4>
-                <table>
-                    <thead>
+            <h4>All Appointments</h4>
+            <div className="table-responsive">
+                <table className="table table-bordered table-striped">
+                    <thead className="thead-dark">
                         <tr>
                             <th>Appointment Date</th>
                             <th>Patient</th>
                             <th>Doctor</th>
                             <th>Status</th>
                             <th>Reason</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {appointments.map(appointment => (
                             <tr key={appointment.id}>
                                 <td>{appointment.appointment_date}</td>
-                                <td>{appointment.patient_id}</td>
-                                <td>{appointment.doctor_id}</td>
+                                <td>{appointment.patient}</td> {/* Display patient's full name */}
+                                <td>{appointment.doctor}</td> {/* Display doctor's full name */}
                                 <td>{appointment.status}</td>
                                 <td>{appointment.reason}</td>
-                                <td>
-                                    {/* Add action buttons here if needed */}
-                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
         </div>
+    </div>    
     );
 };
 

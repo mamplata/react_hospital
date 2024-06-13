@@ -1,81 +1,234 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import axios from 'axios';
 
 const UserManagement = () => {
     const { users, setUsers } = useOutletContext();
     const [editingUser, setEditingUser] = useState(null);
-    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'patient', details: {} });
-    const [isEditing, setIsEditing] = useState(false); // State to track if editing a user
+    const [newUser, setNewUser] = useState({ email: '', password: '', role: 'patient' });
+    const [isEditing, setIsEditing] = useState(false);
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [dateOfBirth, setDateOfBirth] = useState('');
+    const [gender, setGender] = useState('');
+    const [address, setAddress] = useState('');
+    const [phone, setPhone] = useState('');
+    const [emergencyContact, setEmergencyContact] = useState('');
+    const [medicalHistory, setMedicalHistory] = useState('');
+    const [specialization, setSpecialization] = useState('');
+    const [licenseNumber, setLicenseNumber] = useState('');
 
-    // Function to handle adding or updating a user
-    const handleAddOrUpdateUser = () => {
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await axios.get('http://127.0.0.1:8000/api/users');
+                setUsers(response.data);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        };
+
+        setUsers([]);
+        fetchUsers();
+    }, [setUsers]);
+
+    const handleAddOrUpdateUser = async () => {
+        const userData = {
+            ...newUser,
+            name: `${firstName} ${lastName}`,
+        };
+
         if (isEditing) {
-            // If editing, update the user without modifying the password
-            setUsers(users.map(user => user.id === editingUser.id ? { ...user, name: newUser.name, email: newUser.email, role: newUser.role, details: newUser.details } : user));
-            setEditingUser(null);
-            setIsEditing(false); // Reset the editing state
+            try {
+                const response = await axios.put(`http://127.0.0.1:8000/api/users/${editingUser.id}`, userData);
+                const updatedUser = response.data;
+                setUsers(users.map(user => user.id === editingUser.id ? updatedUser : user));
+                resetForm();
+                
+                const usersResponse = await axios.get('http://127.0.0.1:8000/api/users');
+                setUsers(usersResponse.data);
+            } catch (error) {
+                console.error('Error updating user:', error);
+            }
         } else {
-            // If not editing, add a new user
-            const id = users.length ? users[users.length - 1].id + 1 : 1;
-            setUsers([...users, { ...newUser, id, created_at: new Date(), updated_at: new Date() }]);
-            setNewUser({ name: '', email: '', password: '', role: 'patient', details: {} });
+            try {
+                const response = await axios.post('http://127.0.0.1:8000/api/register', userData);
+                const addedUser = response.data;
+
+                if (newUser.role === 'patient') {
+                    await registerPatient();
+                } else if (newUser.role === 'doctor') {
+                    await registerDoctor();
+                } else {
+                    setUsers([...users, addedUser]);
+                    resetForm();
+                }
+
+                const usersResponse = await axios.get('http://127.0.0.1:8000/api/users');
+                setUsers(usersResponse.data);
+            } catch (error) {
+                console.error('Error adding user:', error);
+            }
         }
     };
 
-    // Function to handle editing a user
-    const handleEditUser = (id) => {
-        const userToEdit = users.find(user => user.id === id);
-        setEditingUser(userToEdit);
-        setIsEditing(true); // Set the editing state
-        setNewUser({ name: userToEdit.name, email: userToEdit.email, role: userToEdit.role, details: userToEdit.details });
+    const registerPatient = async () => {
+        const patientData = {
+            first_name: firstName,
+            last_name: lastName,
+            date_of_birth: dateOfBirth,
+            gender,
+            address,
+            phone,
+            email: newUser.email,
+            emergency_contact: emergencyContact,
+            medical_history: medicalHistory,
+        };
+
+        try {
+            const response = await axios.post('http://127.0.0.1:8000/api/addPatients', patientData);
+            const data = response.data;
+            if (data.errors) {
+                alert('Error registering patient: ' + JSON.stringify(data.errors));
+            } else {
+                resetForm();
+            }
+        } catch (error) {
+            console.error('Error registering patient:', error);
+        }
     };
 
-    // Function to handle deleting a user
-    const handleDeleteUser = (id) => {
-        setUsers(users.filter(user => user.id !== id));
+    const registerDoctor = async () => {
+        const doctorData = {
+            first_name: firstName,
+            last_name: lastName,
+            specialization,
+            license_number: licenseNumber,
+            phone,
+            email: newUser.email,
+        };
+
+        try {
+            const response = await axios.post('http://127.0.0.1:8000/api/addDoctors', doctorData);
+            const data = response.data;
+            if (data.errors) {
+                alert('Error registering doctor: ' + JSON.stringify(data.errors));
+            } else {
+                resetForm();
+            }
+        } catch (error) {
+            console.error('Error registering doctor:', error);
+        }
+    };
+
+    const handleEditUser = async (id) => {
+        const userToEdit = users.find(user => user.id === id);
+        setEditingUser(userToEdit);
+        setIsEditing(true);
+        setNewUser({ email: userToEdit.email, role: userToEdit.role });
+        const [firstName, lastName] = userToEdit.name.split(' ');
+        setFirstName(firstName);
+        setLastName(lastName);
+    };
+    
+    const handleDeleteUser = async (id) => {
+        try {
+            await axios.delete(`http://127.0.0.1:8000/api/removeUser/${id}`);
+            setUsers(users.filter(user => user.id !== id));
+            const usersResponse = await axios.get('http://127.0.0.1:8000/api/users');
+            setUsers(usersResponse.data);
+        } catch (error) {
+            console.error('Error deleting user:', error);
+        }
+    };
+
+    const resetForm = () => {
+        setEditingUser(null);
+        setIsEditing(false);
+        setNewUser({ email: '', password: '', role: 'patient' });
+        setFirstName('');
+        setLastName('');
+        setDateOfBirth('');
+        setGender('');
+        setAddress('');
+        setPhone('');
+        setEmergencyContact('');
+        setMedicalHistory('');
+        setSpecialization('');
+        setLicenseNumber('');
     };
 
     return (
-        <div>
-            <h3>User Management</h3>
-            <div>
-                <h4>{isEditing ? 'Edit User' : 'Add New User'}</h4>
-                <input type="text" placeholder="Name" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} />
-                <input type="email" placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-                {!isEditing && <input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />}
-                <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}>
-                    <option value="admin">Admin</option>
-                    <option value="doctor">Doctor</option>
-                    <option value="receptionist">Receptionist</option>
-                    <option value="patient">Patient</option>
-                </select>
-                {newUser.role === 'patient' && (
-                    <>
-                        <input type="text" placeholder="First Name" value={newUser.details.first_name || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, first_name: e.target.value } })} />
-                        <input type="text" placeholder="Last Name" value={newUser.details.last_name || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, last_name: e.target.value } })} />
-                        <input type="date" placeholder="Date of Birth" value={newUser.details.date_of_birth || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, date_of_birth: e.target.value } })} />
-                        <input type="text" placeholder="Gender" value={newUser.details.gender || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, gender: e.target.value } })} />
-                        <input type="text" placeholder="Address" value={newUser.details.address || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, address: e.target.value } })} />
-                        <input type="text" placeholder="Phone" value={newUser.details.phone || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, phone: e.target.value } })} />
-                        <input type="text" placeholder="Emergency Contact" value={newUser.details.emergency_contact || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, emergency_contact: e.target.value } })} />
-                        <textarea placeholder="Medical History" value={newUser.details.medical_history || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, medical_history: e.target.value } })}></textarea>
-                    </>
-                )}
-                {newUser.role === 'doctor' && (
-                    <>
-                        <input type="text" placeholder="First Name" value={newUser.details.first_name || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, first_name: e.target.value } })} />
-                        <input type="text" placeholder="Last Name" value={newUser.details.last_name || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, last_name: e.target.value } })} />
-                        <input type="text" placeholder="Specialization" value={newUser.details.specialization || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, specialization: e.target.value } })} />
-                        <input type="text" placeholder="License Number" value={newUser.details.license_number || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, license_number: e.target.value } })} />
-                        <input type="text" placeholder="Phone" value={newUser.details.phone || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, phone: e.target.value } })} />
-                        <input type="email" placeholder="Email" value={newUser.details.email || ''} onChange={(e) => setNewUser({ ...newUser, details: { ...newUser.details, email: e.target.value } })} />
-                    </>
-                )}
-                <button onClick={handleAddOrUpdateUser}>{isEditing ? 'Update User' : 'Add User'}</button>
+        <div className="container mt-5">
+            <h3 className="mb-4">User Management</h3>
+            <div className="card mb-4">
+                <div className="card-header">
+                    <h4>{isEditing ? 'Edit User' : 'Add New User'}</h4>
+                </div>
+                <div className="card-body">
+                    <div className="mb-3">
+                        <select className="form-select" value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}>
+                            <option value="admin">Admin</option>
+                            <option value="doctor">Doctor</option>
+                            <option value="receptionist">Receptionist</option>
+                            <option value="patient">Patient</option>
+                        </select>
+                    </div>
+                    <div className="mb-3">
+                        <input type="text" className="form-control" placeholder="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                    </div>
+                    <div className="mb-3">
+                        <input type="text" className="form-control" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                    </div>
+                    {!isEditing && newUser.role === 'patient' && (
+                        <>
+                            <div className="mb-3">
+                                <input type="date" className="form-control" placeholder="Date of Birth" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+                            </div>
+                            <div className="mb-3">
+                                <input type="text" className="form-control" placeholder="Gender" value={gender} onChange={(e) => setGender(e.target.value)} />
+                            </div>
+                            <div className="mb-3">
+                                <input type="text" className="form-control" placeholder="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
+                            </div>
+                            <div className="mb-3">
+                                <input type="text" className="form-control" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                            </div>
+                            <div className="mb-3">
+                                <input type="text" className="form-control" placeholder="Emergency Contact" value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} />
+                            </div>
+                            <div className="mb-3">
+                                <textarea className="form-control" placeholder="Medical History" value={medicalHistory} onChange={(e) => setMedicalHistory(e.target.value)}></textarea>
+                            </div>
+                        </>
+                    )}
+                    {!isEditing && newUser.role === 'doctor' && (
+                        <>
+                            <div className="mb-3">
+                                <input type="text" className="form-control" placeholder="Specialization" value={specialization} onChange={(e) => setSpecialization(e.target.value)} />
+                            </div>
+                            <div className="mb-3">
+                                <input type="text" className="form-control" placeholder="License Number" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} />
+                            </div>
+                            <div className="mb-3">
+                                <input type="text" className="form-control" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                            </div>
+                        </>
+                    )}
+                    <div className="mb-3">
+                        <input type="email" className="form-control" placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
+                    </div>
+                    {!isEditing && (
+                        <div className="mb-3">
+                            <input type="password" className="form-control" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+                        </div>
+                    )}
+                    <button className="btn btn-primary" onClick={handleAddOrUpdateUser}>{isEditing ? 'Update User' : 'Add User'}</button>
+                </div>
             </div>
             <div>
                 <h4>User List</h4>
-                <table>
+                <table className="table">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -91,8 +244,8 @@ const UserManagement = () => {
                                 <td>{user.email}</td>
                                 <td>{user.role}</td>
                                 <td>
-                                    <button onClick={() => handleEditUser(user.id)}>Edit</button>
-                                    <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                                    <button className="btn btn-warning me-2" onClick={() => handleEditUser(user.id)}>Edit</button>
+                                    <button className="btn btn-danger" onClick={() => handleDeleteUser(user.id)}>Delete</button>
                                 </td>
                             </tr>
                         ))}

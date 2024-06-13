@@ -11,7 +11,7 @@ const Login = ({ loginUser }) => {
 
   const handleLogin = () => {
     // Send POST request to login endpoint
-    fetch('/login', {
+    fetch('http://127.0.0.1:8000/api/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -19,6 +19,7 @@ import AppointmentManagementPatient from './components/Patient/AppointmentManage
 import MedicalRecordsManagementPatient from './components/Patient/MedicalRecordsManagement';
 import PatientManagementReceptionist from './components/Receptionist/PatientManagement';
 import AppointmentManagementReceptionist from './components/Receptionist/AppointmentManagement';
+import axios from 'axios';
 
 
 const App = () => {
@@ -39,35 +40,28 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Fetch users data
-    fetch('/users')
-      .then(response => response.json())
-      .then(data => setUsers(data))
-      .catch(error => console.error('Error fetching users:', error));
+    const fetchData = async () => {
+      try {
+        const usersResponse = await axios.get('/users');
+        setUsers(usersResponse.data);
 
-    // Fetch patients data
-    fetch('/patients')
-      .then(response => response.json())
-      .then(data => setPatients(data))
-      .catch(error => console.error('Error fetching patients:', error));
+        const patientsResponse = await axios.get('/patients');
+        setPatients(patientsResponse.data);
 
-    // Fetch doctors data
-    fetch('/doctors')
-      .then(response => response.json())
-      .then(data => setDoctors(data))
-      .catch(error => console.error('Error fetching doctors:', error));
+        const doctorsResponse = await axios.get('/doctors');
+        setDoctors(doctorsResponse.data);
 
-    // Fetch appointments data
-    fetch('/appointments')
-      .then(response => response.json())
-      .then(data => setAppointments(data))
-      .catch(error => console.error('Error fetching appointments:', error));
+        const appointmentsResponse = await axios.get('/appointments');
+        setAppointments(appointmentsResponse.data);
 
-    // Fetch medical records data
-    fetch('/medical_records')
-      .then(response => response.json())
-      .then(data => setMedicalRecords(data))
-      .catch(error => console.error('Error fetching medical records:', error));
+        const medicalRecordsResponse = await axios.get('/medical_records');
+        setMedicalRecords(medicalRecordsResponse.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (
@@ -84,14 +78,14 @@ const App = () => {
         </Route>
         <Route path="/patientdashboard" element={<PatientDashboard currentUser={currentUser} />} />
         <Route path="/patientdashboard/*" element={<PatientDashboard currentUser={currentUser}/>}>
-          <Route path="appointments" element={<AppointmentManagementPatient patients={patients}/>} />
-          <Route path="records" element={<MedicalRecordsManagementPatient patients={patients}/>} />
+          <Route path="appointments" element={<AppointmentManagementPatient currentUser={currentUser}/>} />
+          <Route path="records" element={<MedicalRecordsManagementPatient currentUser={currentUser}/>} />
         </Route>
         <Route path="/doctordashboard/*" element={<DoctorDashboard currentUser={currentUser}/>}>
-          <Route path="doctors" element={<DoctorManagementDoctor doctors={doctors} setDoctors={setDoctors}/>} />
+          <Route path="doctors" element={<DoctorManagementDoctor currentUser={currentUser} doctors={doctors} setDoctors={setDoctors}/>} />
           <Route path="patients" element={<PatientManagementDoctor />} />
-          <Route path="appointments" element={<AppointmentManagementDoctor doctors={doctors}/>} />
-          <Route path="records" element={<MedicalRecordsManagementDoctor />} />
+          <Route path="appointments" element={<AppointmentManagementDoctor currentUser={currentUser}/>} />
+          <Route path="records" element={<MedicalRecordsManagementDoctor currentUser={currentUser}/>} />
         </Route>
         <Route path="/receptionistdashboard/*" element={<ReceptionistDashboard currentUser={currentUser}/>}>
           <Route path="patients" element={<PatientManagementReceptionist />} />
