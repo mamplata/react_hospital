@@ -70,6 +70,11 @@ const PatientManagement = () => {
                             <th>Name</th>
                             <th>Date of Birth</th>
                             <th>Gender</th>
+                            <th>Address</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Emergency Contact</th>
+                            <th>Medical History</th>
                         </tr>
                     </thead>
                     <tbody>
